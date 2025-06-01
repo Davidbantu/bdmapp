@@ -1651,32 +1651,38 @@ renderDashboard();
     }
   }
 }
-    function renderNoteUI() {
-      document.getElementById('content-box').innerHTML = `
-        <div style="border: 1.5px solid #81e4a2; background: linear-gradient(135deg, #0a1b0d, #06200f);
-          box-shadow: 0 4px 8px rgba(129, 228, 162, 0.3); border-radius: 10px; padding: 12px; color: white;
-          font-family: 'Righteous', cursive; font-size: 14px; min-height: 100px; display: flex;
-          flex-direction: column; justify-content: space-between;">
-          <textarea id="noteText" placeholder="empty paragraph text (empty lines)"
-            style="background: transparent; color: white; border: none; resize: none; outline: none;
-            font-family: 'Righteous', cursive; flex-grow: 1; margin-bottom: 10px; line-height: 1.4;" rows="3"></textarea>
-          <button id="noteUpdateBtn" style="align-self: center; padding: 6px 16px; border: 1.5px solid #81e4a2;
-            background: transparent; border-radius: 8px; color: white; font-size: 14px; cursor: pointer;
-            transition: all 0.3s ease; width: 100px;">Update</button>
-        </div>
-      `;
-      const updateBtn = document.getElementById('noteUpdateBtn');
-     updateBtn.addEventListener('click', () => {
-  updateBtn.classList.add('pressed');
-  const noteText = document.getElementById('noteText').value.trim();
-  // Save note to Firebase here instead (see previous answer)
-  alert('Note updated.');
-  setTimeout(() => {
-    updateBtn.classList.remove('pressed');
-    document.getElementById('noteText').value = '';
-  }, 1000);
-});
-    }
+   function renderNoteUI() {
+  document.getElementById('content-box').innerHTML = `
+    <div style="border: 1.5px solid #81e4a2; background: linear-gradient(135deg, #0a1b0d, #06200f);
+      box-shadow: 0 4px 8px rgba(129, 228, 162, 0.3); border-radius: 10px; padding: 12px; color: white;
+      font-family: 'Righteous', cursive; font-size: 14px; min-height: 100px; display: flex;
+      flex-direction: column; justify-content: space-between;">
+      <textarea id="noteText" placeholder="empty paragraph text (empty lines)"
+        style="background: transparent; color: white; border: none; resize: none; outline: none;
+        font-family: 'Righteous', cursive; flex-grow: 1; margin-bottom: 10px; line-height: 1.4;" rows="3"></textarea>
+      <button id="noteUpdateBtn" style="align-self: center; padding: 6px 16px; border: 1.5px solid #81e4a2;
+        background: transparent; border-radius: 8px; color: white; font-size: 14px; cursor: pointer;
+        transition: all 0.3s ease; width: 100px;">Update</button>
+    </div>
+  `;
+
+  // Pre-fill textarea with current note (optional but recommended)
+  document.getElementById('noteText').value = statusInfo.note || "";
+
+  const updateBtn = document.getElementById('noteUpdateBtn');
+  updateBtn.addEventListener('click', () => {
+    updateBtn.classList.add('pressed');
+    const noteText = document.getElementById('noteText').value.trim();
+    db.ref('statusInfo').update({
+      note: noteText || "Empty"
+    });
+    alert('Note updated.');
+    setTimeout(() => {
+      updateBtn.classList.remove('pressed');
+      document.getElementById('noteText').value = '';
+    }, 1000);
+  });
+}
     function toggleCustomName(select) {
       document.getElementById('customNameRow').style.display = select.value === 'Enter name' ? 'block' : 'none';
     }
