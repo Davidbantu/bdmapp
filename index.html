@@ -1483,10 +1483,7 @@ function renderSelectItemUI() {
     </div>
     <div class="field-row">
       <div class="section-label">Units</div>
-      <select id="unitSelect" class="unit-select">
-        <option${thisItem&&thisItem.unit=="Kg"?" selected":""}>Kg</option>
-        <option${thisItem&&(thisItem.unit=="L"||thisItem.unit=="Litre")?" selected":""}>Litre</option>
-      </select>
+      <span style="margin-left:8px; font-weight:bold; color:#b2f0c0;">${thisItem ? thisItem.unit : ""}</span>
       <button class="update-btn" style="margin-left:auto;" onclick="updateItem()">Update</button>
     </div>
   `;
