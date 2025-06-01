@@ -974,36 +974,122 @@ listenToStatusInfo();
       }
     ];
     // --- ALL ITEM LIST DATA & LOGIC ---
-    // Weekly Tables
-    let tableButtonsWeekly = [
-      {label: "Kitchen list", items: [
-        { name: "Chicken", quantity: 12, unit: "Kg", selected: false },
-        { name: "Lamb", quantity: 7, unit: "Kg", selected: false }
-      ]},
-      {label: "Drink list", items: [
-        { name: "Cola", quantity: 24, unit: "Bottle", selected: false },
-        { name: "Juice", quantity: 15, unit: "Bottle", selected: false }
-      ]},
-      {label: "Other items", items: [
-        { name: "Napkins", quantity: 100, unit: "Pack", selected: false },
-        { name: "Plates", quantity: 50, unit: "Piece", selected: false }
-      ]}
-    ];
-    // Daily Tables
-    let tableButtonsDaily = [
-      {label: "Kitchen list", items: [
-        { name: "Chicken", quantity: 2, unit: "Kg", selected: false },
-        { name: "Lamb", quantity: 1, unit: "Kg", selected: false }
-      ]},
-      {label: "Drink list", items: [
-        { name: "Cola", quantity: 4, unit: "Bottle", selected: false },
-        { name: "Juice", quantity: 3, unit: "Bottle", selected: false }
-      ]},
-      {label: "Other items", items: [
-        { name: "Napkins", quantity: 20, unit: "Pack", selected: false },
-        { name: "Plates", quantity: 10, unit: "Piece", selected: false }
-      ]}
-    ];
+  // 2. Arrays for rendering (no more manual changes, always use Firebase!)
+let tableButtonsWeekly = [];
+let tableButtonsDaily = [];
+
+// 3. Listen for changes from Firebase
+db.ref('tables').on('value', (snapshot) => {
+  const data = snapshot.val() || {};
+  tableButtonsWeekly = data.weekly || [];
+  tableButtonsDaily = data.daily || [];
+  renderAllTables();
+});
+
+// 4. Render function for all tables
+function renderAllTables() {
+  // Weekly Tables
+  const weeklyContainer = document.getElementById('weekly-tables-container');
+  weeklyContainer.innerHTML = '';
+  tableButtonsWeekly.forEach((table, tableIdx) => {
+    weeklyContainer.innerHTML += `
+      <div style="margin-bottom:16px;">
+        <b>${table.label}</b>
+        <button onclick="deleteTable('weekly', ${tableIdx})">Delete Table</button>
+        <table border="1" style="margin-top:8px;">
+          <tr><th>Item</th><th>Qty</th><th>Unit</th><th>Selected</th><th>Delete Row</th></tr>
+          ${table.items.map((item, idx) => `
+            <tr>
+              <td>${item.name}</td>
+              <td>${item.quantity}</td>
+              <td>${item.unit}</td>
+              <td><input type="checkbox" ${item.selected ? "checked" : ""} onchange="toggleSelected('weekly', ${tableIdx}, ${idx}, this.checked)"></td>
+              <td><button onclick="deleteRow('weekly', ${tableIdx}, ${idx})">Delete</button></td>
+            </tr>
+          `).join('')}
+        </table>
+        <button onclick="addRow('weekly', ${tableIdx})">Add Row</button>
+      </div>
+    `;
+  });
+
+  // Daily Tables
+  const dailyContainer = document.getElementById('daily-tables-container');
+  dailyContainer.innerHTML = '';
+  tableButtonsDaily.forEach((table, tableIdx) => {
+    dailyContainer.innerHTML += `
+      <div style="margin-bottom:16px;">
+        <b>${table.label}</b>
+        <button onclick="deleteTable('daily', ${tableIdx})">Delete Table</button>
+        <table border="1" style="margin-top:8px;">
+          <tr><th>Item</th><th>Qty</th><th>Unit</th><th>Selected</th><th>Delete Row</th></tr>
+          ${table.items.map((item, idx) => `
+            <tr>
+              <td>${item.name}</td>
+              <td>${item.quantity}</td>
+              <td>${item.unit}</td>
+              <td><input type="checkbox" ${item.selected ? "checked" : ""} onchange="toggleSelected('daily', ${tableIdx}, ${idx}, this.checked)"></td>
+              <td><button onclick="deleteRow('daily', ${tableIdx}, ${idx})">Delete</button></td>
+            </tr>
+          `).join('')}
+        </table>
+        <button onclick="addRow('daily', ${tableIdx})">Add Row</button>
+      </div>
+    `;
+  });
+}
+
+// 5. Add Table
+function addTable(type) {
+  const label = prompt("Enter table label:");
+  if (!label) return;
+  db.ref(`tables/${type}`).once('value').then(snapshot => {
+    const tables = snapshot.val() || [];
+    tables.push({ label, items: [] });
+    db.ref(`tables/${type}`).set(tables);
+  });
+}
+
+// 6. Delete Table
+function deleteTable(type, tableIdx) {
+  db.ref(`tables/${type}`).once('value').then(snapshot => {
+    const tables = snapshot.val() || [];
+    tables.splice(tableIdx, 1);
+    db.ref(`tables/${type}`).set(tables);
+  });
+}
+
+// 7. Add Row
+function addRow(type, tableIdx) {
+  const name = prompt("Enter item name:");
+  const quantity = prompt("Enter quantity:");
+  const unit = prompt("Enter unit:");
+  if (!name || !quantity || !unit) return;
+  db.ref(`tables/${type}`).once('value').then(snapshot => {
+    const tables = snapshot.val() || [];
+    tables[tableIdx].items.push({ name, quantity: Number(quantity), unit, selected: false });
+    db.ref(`tables/${type}`).set(tables);
+  });
+}
+
+// 8. Delete Row
+function deleteRow(type, tableIdx, itemIdx) {
+  db.ref(`tables/${type}`).once('value').then(snapshot => {
+    const tables = snapshot.val() || [];
+    tables[tableIdx].items.splice(itemIdx, 1);
+    db.ref(`tables/${type}`).set(tables);
+  });
+}
+
+// 9. Toggle selected
+function toggleSelected(type, tableIdx, itemIdx, checked) {
+  db.ref(`tables/${type}`).once('value').then(snapshot => {
+    const tables = snapshot.val() || [];
+    tables[tableIdx].items[itemIdx].selected = checked;
+    db.ref(`tables/${type}`).set(tables);
+  });
+}
+    bdmxx
     // Toggle state for weekly/daily tables
     let dashboardTableType = localStorage.getItem('dashboardTableType') || "weekly";
 let updateTableType = localStorage.getItem('updateTableType') || "weekly";
@@ -1203,55 +1289,7 @@ let tableButtons = dashboardTableType === "weekly" ? tableButtonsWeekly : tableB
       });
       renderTable();
     }
-    function renderTable() {
-      const tableContainer = document.getElementById('kitchenTableContainer');
-      const tableButtons = getCurrentTableButtons();
-      const activeTableIndex = getActiveTableIndex();
-      const items = tableButtons[activeTableIndex]?.items || [];
-      if (!items.length) {
-        tableContainer.innerHTML = '';
-        return;
-      }
-      const rows = items.map((item, idx) => `
-  <tr class="${item.selected ? "row-selected" : ""}" onclick="selectRow(${idx}, this)">
-    <td>${item.name}</td>
-    <td onclick="event.stopPropagation();">
-      <input type="checkbox" ${item.selected ? "checked" : ""} onclick="toggleRowCheckbox(event, ${idx}, this)">
-    </td>
-    <td>
-      <div class="quantity-controls">
-        <button class="value-btn" onclick="changeQuantity(this, -1, ${idx})">−</button>
-        <input type="number" value="${item.quantity}" min="0" style="width: 50px; text-align: center; background-color: #2c5f47; border: none; color: white;" onchange="changeQuantityInput(this, ${idx})">
-        <button class="value-btn" onclick="changeQuantity(this, 1, ${idx})">+</button>
-      </div>
-    </td>
-    <td>${item.unit}</td>
-  </tr>
-`).join('');
-      tableContainer.innerHTML = `
-        <table style="
-          width: 100%;
-          border-collapse: separate;
-          border-radius: 10px;
-          overflow: hidden;
-          background-color: #1e382a;
-          box-shadow: 0 2px 8px rgba(0, 255, 100, 0.1);
-          border: none;
-        ">
-          <thead>
-            <tr style="font-size: 12px; color: #b9ffc9; text-align: left;">
-              <th style="padding: 10px;">Item Name</th>
-              <th style="padding: 10px;">Checkbox</th>
-              <th style="padding: 10px;">Quantity</th>
-              <th style="padding: 10px;">Units</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${rows}
-          </tbody>
-        </table>
-      `;
-    }
+   
     function toggleRowSelection(checkbox, idx) {
       const tableButtons = getCurrentTableButtons();
       const activeTableIndex = getActiveTableIndex();
@@ -1293,27 +1331,7 @@ renderDashboard();
       document.getElementById('modalTableName').value = "";
       document.getElementById('modalTableName').focus();
     }
-    function addTableFromModal() {
-      const tableNameInput = document.getElementById('modalTableName');
-      let name = tableNameInput.value.trim();
-      if (!name) {
-        tableNameInput.focus();
-        tableNameInput.style.borderColor = "#f77";
-        setTimeout(()=>{tableNameInput.style.borderColor="";},600);
-        return;
-      }
-      const tableButtons = getCurrentTableButtons();
-      if (tableButtons.some(tb => tb.label.toLowerCase() === name.toLowerCase())) {
-        alert("Table name already exists!");
-        tableNameInput.focus();
-        return;
-      }
-      tableButtons.push({label: name, items: []});
-      setActiveTableIndex(tableButtons.length - 1);
-      renderTableButtons();
-      renderTable();
-      closeAddTableModal();
-    }
+  
     function showDeleteTableModal() {
       const select = document.getElementById('modalDeleteTableSelect');
       select.innerHTML = '';
@@ -1334,25 +1352,7 @@ renderDashboard();
       document.getElementById('modalDeleteTableSelect').selectedIndex = -1;
       document.getElementById('modalDeleteTableSelect').focus();
     }
-    function deleteTableFromModal() {
-      const select = document.getElementById('modalDeleteTableSelect');
-      if (select.selectedIndex === -1) {
-        select.focus();
-        select.style.borderColor = "#f77";
-        setTimeout(()=>{select.style.borderColor="";},600);
-        return;
-      }
-      const tableButtons = getCurrentTableButtons();
-      const idx = parseInt(select.value, 10);
-      if (isNaN(idx) || idx < 3 || idx >= tableButtons.length) return;
-      if (confirm(`Delete table "${tableButtons[idx].label}"? This cannot be undone.`)) {
-        tableButtons.splice(idx, 1);
-        if (getActiveTableIndex() >= idx) setActiveTableIndex(Math.max(0, getActiveTableIndex() - 1));
-        renderTableButtons();
-        renderTable();
-        closeDeleteTableModal();
-      }
-    }
+    
     function showAddItemModal() {
       document.getElementById('modalOverlayAddItem').style.display = "flex";
       setTimeout(() => {
