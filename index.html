@@ -5,7 +5,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <!-- Firebase Realtime Database -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>KITCHEN INVENTORY - Unified</title>
   <link href="https://fonts.googleapis.com/css2?family=Righteous&display=swap" rel="stylesheet">
@@ -715,6 +715,9 @@
 #kitchenTableContainer table {
   table-layout: fixed;
   width: 100%;
+}
+    html, body {
+  touch-action: manipulation; /* restricts gestures */
 }
 
 #kitchenTableContainer .quantity-controls {
