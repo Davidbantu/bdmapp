@@ -902,8 +902,7 @@
 </div>
   </div>
  <script>
-
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+   // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyCNmQQyVaVAE3Chh-pOMUEl4GyxrHgiUSg",
   authDomain: "kitchen-inventory-43a89.firebaseapp.com",
@@ -949,35 +948,6 @@ function listenToStatusInfo() {
 }
 listenToStatusInfo();
 
-let dashboardLists = [
-  {
-    title: "Kitchen List",
-    id: "kitchen-table",
-    items: [
-      { name: "Chicken", qty: "12 Kg" },
-      { name: "Rice", qty: "5 Kg" }
-    ]
-  },
-  {
-    title: "Drink List",
-    id: "drink-table",
-    items: [
-      { name: "Milk", qty: "20 L" },
-      { name: "Juice", qty: "10 L" }
-    ]
-  },
-  {
-    title: "Other Items",
-    id: "other-table",
-    items: [
-      { name: "Salt", qty: "1 Kg" },
-      { name: "Oil", qty: "3 L" }
-    ]
-  }
-];
-
-// --- ALL ITEM LIST DATA & LOGIC (FIREBASE SYNCED) ---
-
 let tableButtonsWeekly = [];
 let tableButtonsDaily = [];
 
@@ -998,7 +968,7 @@ function syncTablesToFirebase() {
   });
 }
 
-// Toggle state for weekly/daily tables
+// Toggle state for weekly/daily tables for Dashboard and Page 2
 let dashboardTableType = localStorage.getItem('dashboardTableType') || "weekly";
 let updateTableType = localStorage.getItem('updateTableType') || "weekly";
 function getCurrentTableButtons() {
@@ -1031,7 +1001,7 @@ function showUpdatePage() {
   document.getElementById('statusDate').value = "";
   document.getElementById('statusSelect').value = "";
   document.getElementById('customNameRow').style.display = "none";
-  setTableToggleVisual(tableType);
+  setTableToggleVisual(updateTableType);
 }
 
 // --- DASHBOARD RENDERING ---
@@ -1054,16 +1024,14 @@ function renderDashboard() {
   document.getElementById('dashboard-date').innerText = statusInfo.date;
   document.getElementById('note-value').innerText = statusInfo.note || "Empty";
 
-  // --- NEW: Dynamic Output Tables for Selected Items ---
-  // Use global tableType for the current mode
-
+  // --- Dynamic Output Tables for Selected Items ---
+  // Use dashboardTableType for the current mode
   let tableButtons = dashboardTableType === "weekly" ? tableButtonsWeekly : tableButtonsDaily;
 
   let outputHtml = "";
-
   tableButtons.forEach(table => {
     // Only show if at least one item is selected
-    const selectedItems = table.items.filter(item => item.selected);
+    const selectedItems = (table.items || []).filter(item => item.selected);
     if (selectedItems.length > 0) {
       outputHtml += `
         <div style="margin-bottom:18px;">
@@ -1091,6 +1059,7 @@ function renderDashboard() {
 
   document.getElementById('selectedItemsOutput').innerHTML = outputHtml;
 }
+
 function copyTable(tableId) {
   const table = document.getElementById(tableId);
   let text = "";
@@ -1103,12 +1072,13 @@ function copyTable(tableId) {
     .then(() => alert("List copied!"))
     .catch(err => alert("Copy failed"));
 }
+
 function toggleListTitle() {
+  // Toggle between weekly and daily on the Dashboard
   const titleEl = document.getElementById('listTitle');
   const svg = document.getElementById('toggleSwitch');
   const knob = document.getElementById('toggleKnob');
-  let isWeekly = dashboardTableType === "weekly";
-  dashboardTableType = isWeekly ? "daily" : "weekly";
+  dashboardTableType = dashboardTableType === "weekly" ? "daily" : "weekly";
   localStorage.setItem('dashboardTableType', dashboardTableType);
   if (!titleEl || !svg || !knob) return;
   if(dashboardTableType === "daily") {
@@ -1126,6 +1096,7 @@ function toggleListTitle() {
   }
   renderDashboard();
 }
+
 document.addEventListener('DOMContentLoaded', function() {
   // Set dashboard toggle knob position
   const knob = document.getElementById('toggleKnob');
@@ -1151,7 +1122,6 @@ function toggleTableType() {
   setTableToggleVisual(updateTableType);
   renderTableButtons();
   renderTable();
-  // Do NOT call renderDashboard() here!
 }
 function setTableToggleVisual(type) {
   const titleEl = document.getElementById('listTitle2');
@@ -1474,9 +1444,9 @@ window.addEventListener('DOMContentLoaded', function() {
   renderTableButtons();
   renderTable();
   document.getElementById('selectItemBtn').click();
-  setTableToggleVisual(tableType);
+  setTableToggleVisual(updateTableType);
 });
-// --- UPDATE PAGE SELECT/ADD/DELETE/NOTE --- (unchanged)
+// --- UPDATE PAGE SELECT/ADD/DELETE/NOTE ---
 let selectState = { selectedItem: null };
 function activateButton(button, mode='') {
   document.querySelectorAll('.action-btn').forEach(btn => btn.classList.remove('active'));
@@ -1545,7 +1515,6 @@ function updateItem() {
     inventoryItems[idx].value = parseInt(document.getElementById('valueInput').value) || 0;
     inventoryItems[idx].unit = document.getElementById('unitSelect').value;
     inventoryItems[idx].lastUpdated = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
-    // Save to Firebase
     db.ref('inventoryItems').set(inventoryItems);
     alert(`${selectState.selectedItem} updated to ${inventoryItems[idx].value} ${inventoryItems[idx].unit}`);
     renderDashboard();
@@ -1603,7 +1572,7 @@ function createNewBox() {
     unit: unit,
     lastUpdated: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
   });
-  db.ref('inventoryItems').set(inventoryItems); // Sync to Firebase
+  db.ref('inventoryItems').set(inventoryItems);
   alert(`New item '${newItemName}' added with value ${value} ${unit}`);
   renderDashboard();
   document.getElementById('newItemName').value = '';
@@ -1631,7 +1600,7 @@ function deleteItem() {
   if (idx >= 0) {
     if (confirm(`Delete ${itemName}?`)) {
       inventoryItems.splice(idx, 1);
-      db.ref('inventoryItems').set(inventoryItems); // Sync to Firebase
+      db.ref('inventoryItems').set(inventoryItems);
       renderDashboard();
       alert(`${itemName} deleted.`);
       renderDeleteItemUI();
@@ -1653,7 +1622,6 @@ function renderNoteUI() {
     </div>
   `;
 
-  // Pre-fill textarea with current note (optional but recommended)
   document.getElementById('noteText').value = statusInfo.note || "";
 
   const updateBtn = document.getElementById('noteUpdateBtn');
@@ -1688,12 +1656,11 @@ function saveStatus() {
     doneBy: employee,
     date: new Date(date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
     status: "Inventory " + status,
-    note: statusInfo.note || "Empty" // keep previous note if not editing
+    note: statusInfo.note || "Empty"
   };
   db.ref('statusInfo').set(updatedStatus);
   alert(`Status saved: ${employee}, ${date}, ${status}`);
 }
-
 </script>
 </body>
 </html>
