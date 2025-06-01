@@ -930,12 +930,23 @@ function listenToInventoryItems() {
   });
 }
 listenToInventoryItems();
-    let statusInfo = {
-      status: "Inventory Done",
-      doneBy: "John Doe",
-      date: "25 May 2025",
-      note: localStorage.getItem('kitchenNote') || "Empty"
-    };
+   let statusInfo = {
+  status: "",
+  doneBy: "",
+  date: "",
+  note: ""
+};
+
+function listenToStatusInfo() {
+  db.ref('statusInfo').on('value', (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      statusInfo = data;
+      renderDashboard();
+    }
+  });
+}
+listenToStatusInfo();
     let dashboardLists = [
       {
         title: "Kitchen List",
@@ -1655,39 +1666,40 @@ renderDashboard();
         </div>
       `;
       const updateBtn = document.getElementById('noteUpdateBtn');
-      updateBtn.addEventListener('click', () => {
-        updateBtn.classList.add('pressed');
-        const noteText = document.getElementById('noteText').value.trim();
-        statusInfo.note = noteText || "Empty";
-        localStorage.setItem('kitchenNote', statusInfo.note);
-        renderDashboard();
-        alert('Note updated.');
-        setTimeout(() => {
-          updateBtn.classList.remove('pressed');
-          document.getElementById('noteText').value = '';
-        }, 1000);
-      });
+     updateBtn.addEventListener('click', () => {
+  updateBtn.classList.add('pressed');
+  const noteText = document.getElementById('noteText').value.trim();
+  // Save note to Firebase here instead (see previous answer)
+  alert('Note updated.');
+  setTimeout(() => {
+    updateBtn.classList.remove('pressed');
+    document.getElementById('noteText').value = '';
+  }, 1000);
+});
     }
     function toggleCustomName(select) {
       document.getElementById('customNameRow').style.display = select.value === 'Enter name' ? 'block' : 'none';
     }
-    function saveStatus() {
-      const employeeSelect = document.getElementById('employeeSelect');
-      const employee = employeeSelect.value === 'Enter name'
-        ? document.getElementById('customNameInput').value.trim()
-        : employeeSelect.value;
-      const date = document.getElementById('statusDate').value;
-      const status = document.getElementById('statusSelect').value;
-      if (!employee || !date || !status) {
-        alert('Please fill all required fields.');
-        return;
-      }
-      statusInfo.doneBy = employee;
-      statusInfo.date = new Date(date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-      statusInfo.status = "Inventory " + status;
-      renderDashboard();
-      alert(`Status saved: ${employee}, ${date}, ${status}`);
-    }
+   function saveStatus() {
+  const employeeSelect = document.getElementById('employeeSelect');
+  const employee = employeeSelect.value === 'Enter name'
+    ? document.getElementById('customNameInput').value.trim()
+    : employeeSelect.value;
+  const date = document.getElementById('statusDate').value;
+  const status = document.getElementById('statusSelect').value;
+  if (!employee || !date || !status) {
+    alert('Please fill all required fields.');
+    return;
+  }
+  const updatedStatus = {
+    doneBy: employee,
+    date: new Date(date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
+    status: "Inventory " + status,
+    note: statusInfo.note || "Empty" // keep previous note if not editing
+  };
+  db.ref('statusInfo').set(updatedStatus);
+  alert(`Status saved: ${employee}, ${date}, ${status}`);
+}
   </script>
 </body>
 </html>
