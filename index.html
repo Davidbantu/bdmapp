@@ -1510,7 +1510,9 @@ function updateItem() {
   const idx = inventoryItems.findIndex(it => it.name === selectState.selectedItem);
   if (idx >= 0) {
     inventoryItems[idx].value = parseInt(document.getElementById('valueInput').value) || 0;
-    inventoryItems[idx].unit = document.getElementById('unitSelect').value;
+    // Use the unit from the selected item (already displayed as text)
+    // Do NOT try to get value from a select, just keep the unit unchanged
+    // inventoryItems[idx].unit = document.getElementById('unitSelect').value;  // REMOVE this line if you still have it
     inventoryItems[idx].lastUpdated = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
     db.ref('inventoryItems').set(inventoryItems);
     alert(`${selectState.selectedItem} updated to ${inventoryItems[idx].value} ${inventoryItems[idx].unit}`);
